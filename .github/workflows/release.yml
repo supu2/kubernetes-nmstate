@@ -64,7 +64,6 @@ jobs:
       run: |
         make manifests
         helm dependency update ./${{ env.CHART_DIR }}
-        helm package ./${{ env.CHART_DIR }} --destination ./charts
+        helm package ./${{ env.CHART_DIR }} --destination ./charts --app-version ${{ steps.bump-semver.outputs.new_version }} --version ${{ steps.bump-semver.outputs.new_version }}
         CHART_VERSION=$(helm show chart ./${{ env.CHART_DIR }} | grep version: | awk '{print $2}')
-        helm push ./charts/${{ github.event.repository.name }}-${CHART_VERSION}.tgz oci://ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-
+        helm push ./charts/${{ github.event.repository.name }}-${{ steps.bump-semver.outputs.new_version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
