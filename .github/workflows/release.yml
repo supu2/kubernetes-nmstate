@@ -72,6 +72,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}      
     - name: Push Charts to GHCR
       run: |
+        ls 
         for pkg in .cr-release-packages/*; do
           if [ -z "${pkg:-}" ]; then
             break
