@@ -54,6 +54,8 @@ jobs:
     - name: Template Helm charts
       run: |
         make manifests
+        ls build/_output/manifests
+        helm package -d deploy/helm
     - name: Run chart-releaser
       uses: helm/chart-releaser-action@v1.6.0
       with:
