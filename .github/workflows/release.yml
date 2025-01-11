@@ -23,6 +23,7 @@ on:
         - release-0.47
 env:
   REGISTRY: ghcr.io
+  CHART_DIR: deploy/helm
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -53,30 +54,17 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.21.x'
-    - name: Template Helm charts
-      run: |
-        make manifests
-        ls 
-    - name: Run chart-releaser
-      uses: helm/chart-releaser-action@v1.6.0
-      with:
-        charts_dir: deploy/helm
-        skip_upload: true
-      env:
-        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     - name: Log into registry ${{ env.REGISTRY }}
       uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}      
-    - name: Push Charts to GHCR
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Template Helm charts
       run: |
-        ls -al
-        ls -al deploy/helm
-        for pkg in .cr-release-packages/*; do
-          if [ -z "${pkg:-}" ]; then
-            break
-          fi
-          helm push "${pkg}" oci://ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ env.REPOSITORY }}
-        done
+        make manifests
+        helm dependency update ./${{ env.CHART_DIR }}
+        helm package ./${{ env.CHART_DIR }} --destination ./charts
+        CHART_VERSION=$(helm show chart ./${{ env.CHART_DIR }} | grep version: | awk '{print $2}')
+        helm push ./charts/${{ github.event.repository.name }}-${CHART_VERSION}.tgz oci://ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+
